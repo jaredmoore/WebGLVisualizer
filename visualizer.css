@@ -1,0 +1,250 @@
+* {
+   margin: 0px;
+   padding: 0px;
+}
+
+h1
+{
+	padding-top:20px;
+	padding-bottom:20px;
+}
+
+h3
+{
+	padding-top:10px;
+	padding-bottom:10px;
+}
+
+html
+{
+	background: #FAFAFA;
+}
+
+body 
+{
+	background: white;
+	font-family: Tahoma, Geneva, sans-serif;
+	width: 1280px;
+	float:center;
+	margin: 0 auto;
+	padding: 0 20px;
+}
+
+#intro_text
+{
+	margin-bottom: 50px;
+	margin-top: 0px;
+}
+
+#container
+{
+	height:750px;
+	width: 1280px;
+	background: gray;
+}
+
+#sim_time_div
+{
+	visibility: hidden;
+	position: absolute;
+	height:40px;
+	top:10px;
+	right:10px;
+	z-index: 1;
+	/*background-color: rgba(255,255,255,0.5);*/
+	font-size: 38px;
+	color: white;
+}
+
+#file_number_div
+{
+	visibility: hidden;
+	position: absolute;
+	height:40px;
+	top:10px;
+	left:100px;
+	z-index: 1;
+	/*background-color: rgba(255,255,255,0.5);*/
+	font-size: 38px;
+	color: white;
+}
+
+#playback_speed_div
+{
+	visibility: hidden;
+	position: absolute;
+	margin-right: 200px;
+	height:40px;
+	width:100px;
+	top:10px;
+	right:10px;
+	z-index: 1;
+	/*background-color: rgba(255,255,255,0.5);*/
+	font-size: 38px;
+	color: white;	
+}
+
+#left_playback
+{
+	float:left;
+	font-size: 18px;
+	padding-right: 5px;
+}
+
+#speed_up_div
+{
+	float:right;
+}
+
+#slow_down_div
+{
+	padding-left: 3px;
+}
+
+button.playback
+{
+	border: none;
+	background: none;
+	color:white;
+}
+
+.menu_text
+{
+	font-size: 12px;
+}
+
+#playback_speed_text
+{
+	font-size: 28px;
+}
+
+.playback_screen_elem
+{
+	width: 1280px;
+}
+
+#player_container
+{
+	position: relative;
+	border-left: 1px solid #000000;
+	border-top: 1px solid #000000;
+	border-right: 1px solid #000000;
+}
+
+#interaction_pane
+{
+	position: relative;
+	margin-top: -30px;
+	background: gray;
+	margin-bottom: 50px;
+	border-left: 1px solid #000000;
+	border-bottom: 1px solid #000000;
+	border-right: 1px solid #000000;
+}
+
+#playback_controller
+{
+	visibility: hidden;
+	margin-left:auto;
+	margin-right:auto;
+	margin-top:-20px;
+	width: 240px;
+	height: 62px;
+}
+
+#color_picker_div
+{
+	visibility: hidden;
+	height: 62px;
+	background: black;
+}
+
+.color_picker_text
+{
+	font-size: 24px;
+	color: white;
+	display: inline;
+	padding-right: 5px;
+}
+
+#color_object_selector
+{
+	width:40px;
+}
+
+#open_files
+{
+	position: absolute;
+}
+
+#files
+{
+	position: absolute;
+}
+
+#demo
+{
+	position: absolute;
+	height: 58px;
+	left: 60px;
+	top: 9px;
+}
+
+#files2
+{
+	display: none;
+	visibility: hidden;
+}
+
+#pause_button
+{
+	display: none;
+}
+
+#rwd_button
+{
+	float: left;
+	padding-top:4px;
+}
+
+#play_button
+{
+	padding-left: 6px;
+}
+
+#pause_button
+{
+	padding-left: 6px;
+}
+
+#ffwd_button
+{
+	padding-top:4px;
+	float: right;
+}
+
+.dg.ac
+{
+	position: absolute;
+	top: 8px;
+	left: 1150px;
+	width: 400px;
+}
+
+/*#file-image {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    overflow: hidden;
+}
+
+
+#file-image input {
+    height: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    -moz-opacity: 0;
+    filter: alph/*a(opacity: 0);
+    opacity: 0;
+}*/
