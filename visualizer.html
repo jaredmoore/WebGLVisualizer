@@ -24,6 +24,7 @@
 		<script src="lib/dat.gui.min.js"></script>
 		<script src="lib/tween.min.js"></script>
 		<script type="text/javascript" src="lib/jscolor/jscolor.js"></script>
+		<script src="visualizer/object_creator.js" ></script>
 		<script src="visualizer/skeleton.js" ></script>
 		<link rel="stylesheet" type="text/css" href="visualizer.css">
 
@@ -61,19 +62,38 @@
 		        document.getElementById('hexapod_demo').addEventListener('click', handleDemoClick, false);
 		        document.getElementById('demo').addEventListener('click', handleDemoClick, false);
 		        document.getElementById('files2').addEventListener('change', handleFileSelect, false);
+
+        		// file drop
+				document.getElementById('container').addEventListener("dragover", FileDragHover, false);
+				document.getElementById('container').addEventListener("dragleave", FileDragHover, false);
+				document.getElementById('container').addEventListener("drop", handleFileSelect, false);
+				document.getElementById('container').style.display = "block";
 		    }
 
+		    // Change the color of the color picker when the event is triggered.
 		    function handleObjectChange(evt) {
-		    	if (animated_objects[document.getElementById('color_object_selector').value].children[0].material.materials[0] == undefined) {
-		    			document.getElementById('object_color').color.fromString(animated_objects[document.getElementById('color_object_selector').value].children[0].material.color.getHex().toString(16));
+		    	if (document.getElementById('color_object_selector').value == "All") {
+		    		document.getElementById('object_color').color.fromString(animated_objects[0].children[0].material.materials[0].color.getHex().toString(16));
 		    	} else {
-			    	document.getElementById('object_color').color.fromString(animated_objects[document.getElementById('color_object_selector').value].children[0].material.materials[0].color.getHex().toString(16));
-			    }
+			    	if (animated_objects[document.getElementById('color_object_selector').value].children[0].material.materials == undefined) {
+			    			document.getElementById('object_color').color.fromString(animated_objects[document.getElementById('color_object_selector').value].children[0].material.color.getHex().toString(16));
+			    	} else {
+				    	document.getElementById('object_color').color.fromString(animated_objects[document.getElementById('color_object_selector').value].children[0].material.materials[0].color.getHex().toString(16));
+				    }
+				}
 		    }
 
 		    function handleColorChange(evt) {
 		    	color = "#"+document.getElementById('object_color').value;
-		    	animated_objects[document.getElementById('color_object_selector').value].children[0].material.color.set(color);
+
+		    	// Check to see if changing all components or just a single one.
+		    	if (document.getElementById('color_object_selector').value == "All") {
+		    		for(var i = 0; i < animated_objects.length; ++i) {
+		    			animated_objects[i].children[0].material.color.set(color);
+		    		}
+		    	} else {
+		    		animated_objects[document.getElementById('color_object_selector').value].children[0].material.color.set(color);
+		    	}
 		    }
 
 			function playCallback(evt) {
@@ -135,21 +155,17 @@
 			}
 
 			function handleFileSelect(evt) {
-				var files = evt.target.files; // FileList object
+				evt.preventDefault();
+				var files = evt.target.files || evt.dataTransfer.files;
 
 				launch(files);
+			}
 
-				// var reader = new FileReader();
-
-				// reader.onload = (function(theFile) {
-				// 	return function(e) {
-				// 		// launch(e.target.result);
-				// 		// document.getElementById('object_color').color.fromString(animated_objects[document.getElementById('color_object_selector').value].children[0].material.color.getHex().toString(16));
-				// 	};
-
-				// })(files[0]);
-
-				// reader.readAsText(files[0]);
+			// file drag hover
+			function FileDragHover(e) {
+				e.preventDefault();
+				e.stopPropagation();
+				return false;
 			}
 		</script>
 	</head>
@@ -221,6 +237,6 @@
 			<div id="sim_time_div"> <span id="sim_time"></span></div>
 			<div id="file_number_div"> <span id="file_number"></span></div>
 		</div>
-        <input type="file" id="files2" name="files[]" multiple />
+        <input type="file" id="files2" name="files[]" multiple="multiple" />
 	</body>
 </html>
