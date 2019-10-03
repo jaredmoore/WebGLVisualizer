@@ -32,12 +32,16 @@ function object_creator() {
 		var a = [3,2,1,4];
 		if (parsed[0] == "box") {
 			cube_geom( obj, parsed[4]*scale_factor, parsed[5]*scale_factor, parsed[6]*scale_factor );
+			obj.type = "cube";
 		} else if(parsed[0] == "capsule") {
 			capped_cylinder_geom( obj, parsed[5]*scale_factor, parsed[4]*scale_factor);
+			obj.type = "capped_cylinder";
 		} else if(parsed[0] == "cylinder") {
 			cylinder_geom( obj, parsed[5]*scale_factor, parsed[4]*scale_factor )
+			obj.type = "cylinder";
 		} else if(parsed[0] == "sphere") {
 			sphere_geom( obj, parsed[4]*scale_factor )
+			obj.type = "sphere";
 		}
 
 		obj.quaternion.copy(
@@ -62,8 +66,6 @@ function object_creator() {
 		scale_factor = sf;
 		color_queue = cq;
 
-		console.log(object_str,cq,sf);
-
 		var object_type = "animated";
 		var parsed = object_str.split(",");
 		var obj = new THREE.Object3D();
@@ -72,12 +74,13 @@ function object_creator() {
 		var a = [3,2,1,4];
 		
 		if (parsed[0] == "scene_sphere") {
-			sphere_geom(obj,parsed[4]*scale_factor,0.2, false);
+			sphere_geom(obj,parsed[4]*scale_factor,0.6, false);
 
 			// Set the position of the object.
 			obj.position.set( parsed[1]*scale_factor, parsed[2]*scale_factor, parsed[3]*scale_factor );
 
 			object_type = "static";
+			obj.type = "sphere";
 		} else if(parsed[0] == "scene_box" || parsed[0] == "terrain_box") {
 			cube_geom( obj, parsed[4]*scale_factor, parsed[5]*scale_factor, parsed[6]*scale_factor );
 
@@ -93,15 +96,20 @@ function object_creator() {
 			obj.position.set( parsed[1]*scale_factor, parsed[2]*scale_factor, parsed[3]*scale_factor );
 
 			object_type = "static";
+			obj.type = "cube";
 		} else {
 			if (parsed[0] == "box") {
 				cube_geom( obj, parsed[4]*scale_factor, parsed[5]*scale_factor, parsed[6]*scale_factor );
+				obj.type = "cube";
 			} else if(parsed[0] == "capsule") {
 				capped_cylinder_geom( obj, parsed[5]*scale_factor, parsed[4]*scale_factor);
+				obj.type = "capped_cylinder";
 			}  else if(parsed[0] == "cylinder") {
 				cylinder_geom( obj, parsed[5]*scale_factor, parsed[4]*scale_factor )
+				obj.type = "cylinder";
 			} else if(parsed[0] == "sphere") {
 				sphere_geom( obj, parsed[4]*scale_factor )
+				obj.type = "sphere";
 			}
 			
 			obj.quaternion.copy(
@@ -220,7 +228,7 @@ function object_creator() {
 
 		// Color the faces individually.
 		for ( var i = 0; i < sphere_geometry.faces.length; ++i ) {
-			face = sphere_geometry.faces[i];
+			var face = sphere_geometry.faces[i];
 			if (i % 2 == 0) {
 				face.color.setRGB(0.2,0.2,0.2);
 			} else {
@@ -293,7 +301,7 @@ function object_creator() {
 		// Color the faces individually.
 		for ( var i = 0; i < sphere_geometry.faces.length; i += 2 ) {
 			for ( var j = 0; j < 2; ++j ) {
-				face = sphere_geometry.faces[i+j];
+				var face = sphere_geometry.faces[i+j];
 				if ((i/2) % 2 == 0) {
 					face.materialIndex = 0;
 				} else {

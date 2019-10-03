@@ -12,12 +12,11 @@ var gridX = true;
 var gridY = false;
 var gridZ = false;
 var axes = false;
+var cameraFollow = true;
 var rotate_world = false;
 var pause = true;
 var play_speed = 1.0;
 var play_direction = 1.0; // Whether viewing playback in forward or reverse.
-var first_round = true; // Keep track of the camera position, only initialize it on the first run through.
-var not_switched = true; // Rendering loop triggers more than once for camera position when clearing objects.
 
 // Implement a color cue for different color objects.
 var color_queue = [];
@@ -42,9 +41,13 @@ var oldTime = 0;
 var newTime = 0;
 var timestep;
 var eval_time;
+var transitionTime = 0.0; // Number of seconds to wait in between two different files. (Set in the callback method.)
 
 var positions = [];
 var quaternions = [];
+var colors = [];
+var alphas = [];
+var variable_colors = false;
 
 var light, light2;
 
@@ -54,13 +57,22 @@ var create_object_ptr = ObjectCreator.create_object;
 var files_list;
 var cur_file;
 
+// Toggle Camera Following
+function toggleFollow(value) {
+	if (value == "yes") {
+		cameraFollow = true;
+	} else {
+		cameraFollow = false;
+	}
+}
+
 // Draw the scene to the screen.
 //
 //Args:
 //user_data: user provided data containing the information about different bodies
 function fillScene(user_data) {
 	scene = new THREE.Scene();
-	scene.fog = new THREE.Fog( 0x808080, 4000, 8000 );
+	//scene.fog = new THREE.Fog( 0x808080, 4000, 8000 );
 
 	// LIGHTS
 	var ambientLight = new THREE.AmbientLight( 0x222222 );
@@ -111,8 +123,17 @@ function fillScene(user_data) {
 	//Parse the user data.
 	for ( var i = 0; i < user_data.length; ++i ) {
 		obj = create_object_ptr(user_data[i],color_queue,scale_factor);
+
+		// if (color_queue.length > 0 && obj[1].type != "sphere" && obj[1].type != "scene_sphere") {
+		// 	console.log("#"+parseInt(color_queue[i]).toString(16));
+		// 	obj[1].children[0].material.color.set("#"+parseInt(color_queue[i]).toString(16));
+		// }
+
+		if (obj[1].type == "cube" && obj[0] == "static") {
+			obj[1].children[0].material.color.set(0x000FFF);
+		}
+
 		if (obj[0] == "animated") {
-			console.log(obj[1])
 			animated_objects.push(obj[1]);
 		} else {
 			static_objects.push(obj[1])
@@ -193,6 +214,12 @@ function init(user_data) {
 	// Set the color picker controls to visible.
 	document.getElementById('color_picker_div').style.visibility = 'visible';
 
+	// Set the camera follow controls to visible.
+	document.getElementById('cam_controls_div').style.visibility = 'visible';
+
+	// Set the time slider div to visible.
+	document.getElementById('playback_slider_div').style.visibility = 'visible';
+
 	// Ensure that the play button is displayed on loading a new file.
 	var play = document.getElementById("play_button");
 	play.style.display = 'inline';
@@ -208,7 +235,6 @@ function init(user_data) {
 		// Remove the previous WebGL visualization.
 		for (var i = 0; i < animated_objects.length; ++i) {
 			scene.remove(animated_objects[i]);
-			// renderer.deallocateObject(animated_objects[i]);
 		}
 
 		while (container.firstChild) {
@@ -233,37 +259,39 @@ function init(user_data) {
 	renderer.shadowMapEnabled = true;
 	renderer.shadowMapSoft = true;
 	renderer.shadowMapType = THREE.PCFSoftShadowMap;
-
-	// renderer.shadowCameraNear = 3;
-	// renderer.shadowCameraFov = 50;
-
-	// renderer.shadowMapBias = 0.0039;
-	// renderer.shadowMapDarkness = 1.0;
 	renderer.shadowMapWidth = 4096;
 	renderer.shadowMapHeight = 4096;
 	container.appendChild( renderer.domElement );
 
 	// CAMERA
-	camera = new THREE.PerspectiveCamera( 30, canvasRatio, 1, 10000 );
-	if (rotate_world) {
-		camera.position.set( 0, 4.8*scale_factor, 12*scale_factor );
-	} else {
-		camera.position.set( 12*scale_factor, 12*scale_factor, 2*scale_factor );
-	}
+	camera = new THREE.PerspectiveCamera( 30, canvasRatio, 1, 40000 );
 	// CONTROLS
 	cameraControls = new THREE.OrbitAndPanControls(camera, renderer.domElement);
+
+	reset_camera_position();
+
+	renderer.shadowCameraFar = camera.far;
+
+}
+
+// Reset the camera position.
+function reset_camera_position() {
+
+	if (camera_position == 0) {
+		if (rotate_world) {
+			cameraControls.object.position.set( 0, 4.8*scale_factor, 12*scale_factor );
+		} else {
+			cameraControls.object.position.set( 12*scale_factor, 12*scale_factor, 2*scale_factor );
+		}
+	} else {
+		cameraControls.object.position.set(camera_position.x,camera_position.y,camera_position.z);
+	}
+
 	if (rotate_world) {
 		cameraControls.target.set(0,0,1*scale_factor);
 	} else {
 		cameraControls.target.set(0,1*scale_factor,0);
 	}
-
-	if (camera_position != 0) {
-		cameraControls.object.position = camera_position;
-	}
-
-	renderer.shadowCameraFar = camera.far;
-
 }
 
 function animate() {
@@ -279,22 +307,29 @@ function render() {
 		last_speed = play_speed;
 	}
 
+	// Update the transitionTime variable.
+	transitionTime -= delta;
+
+	// Update the position and rotation of objects in the simulation.
 	// Check to see if the paused radio button is checked.
-	if ( !playbackController.paused ) {
+	
+	// Render the frame necessary to maintain the playback speed.
+	current_timestep = Math.floor(sim_time/(timestep*substeps));
+
+	// Update the sim time display.
+	document.getElementById("sim_time").textContent = (current_timestep*timestep*substeps).toFixed(3);
+	
+	if ( !playbackController.paused && transitionTime < 0.0) {
 
 		newTime += delta;
 		if ( newTime > oldTime + 1/fps ) {
 
 			// Update the simulation time elapsed element. (I log every 4th physics simulation position.)
-			document.getElementById("sim_time").textContent = (current_timestep*timestep*substeps).toFixed(3);
+			document.getElementById("time_slider_control").value = (current_timestep*timestep*substeps)/eval_time;
 
 			// Get the time difference between renders and adjust for playback speed.
 			sim_time += play_direction*((newTime-oldTime)*play_speed);
 
-			// Render the frame necessary to maintain the playback speed.
-			current_timestep = Math.floor(sim_time/(timestep*substeps));
-			// current_timestep = Math.floor(sim_time/(timestep));
-			
 			//Correct for end of simulation.
 			if ( current_timestep >= positions.length ) {
 				current_timestep = 0;
@@ -306,13 +341,22 @@ function render() {
 					quaternions.length = 0;
 					animated_objects.length = 0;
 					static_objects.length = 0;
-					// prev_pos.length = 0;
 					read_file();
+
+					// Reset the camera position.
+					reset_camera_position();
+
+					// Reset time variables to avoid jumping in the simulation.
+					oldTime = clock.getDelta();
+
+					transitionTime = 0.5;
+
+					// Reset the simulation counter to 0.0
+					document.getElementById("sim_time").textContent = (0.00000).toFixed(3);
 				}
 			} else if ( sim_time < 0 ) {
 				current_timestep = positions.length - 1;
 				sim_time = parseFloat(eval_time);
-				// newTime = 0;
 			}
 
 			var j = current_timestep;
@@ -348,11 +392,38 @@ function render() {
 														positions[j][i*3+2]*scale_factor );
 				}
 
+				// Change the colors of the components.
+				if (variable_colors == true) {
+					if (animated_objects[i].type == "cube" || animated_objects[i].type == "capped_cylinder") {
+						animated_objects[i].children[0].material.color.set("#"+parseInt(colors[j][i]).toString(16));
+					}
+				}
+
 			}
 
-			oldTime = newTime;
+			if (alphas.length > 0) {
+				var j = current_timestep;
+				// Update the alpha shading of the bodies.
+				for (var i = 0; i < animated_objects.length; ++i) {
+					if (animated_objects[i].type == "cube" || animated_objects[i].type == "capped_cylinder") {
+						animated_objects[i].children[0].material.opacity = alphas[j][i];
+					}
+				}
 
-			if (animated_objects.length > 0) {
+				var anim_length = animated_objects.length;
+
+				// Update the alpha shading of the terrain objects.
+				for (var i = 0; i < static_objects.length; ++i) {
+					if (static_objects[i].type == "sphere") {
+						console.log(j);
+						static_objects[i].children[0].material.materials[0].opacity = alphas[j][i+anim_length];
+						static_objects[i].children[0].material.materials[1].opacity = alphas[j][i+anim_length];
+					}
+				}
+			}
+
+			// Update the camera position.
+			if (animated_objects.length > 0 && cameraFollow) {
 				// Update the camera position to follow the object from whatever it's current position is.
 				// Moves by the delta between the object's current position and it's previous position
 				cameraControls.object.position = new THREE.Vector3(
@@ -371,31 +442,18 @@ function render() {
 				prev_pos[1] = animated_objects[LOOK_AT].position.y;
 				prev_pos[2] = animated_objects[LOOK_AT].position.z;
 
-				camera_position = new THREE.Vector3(
-					cameraControls.object.position.x - animated_objects[LOOK_AT].position.x,
-					cameraControls.object.position.y,
-					cameraControls.object.position.z - animated_objects[LOOK_AT].position.z
-				);
-
 				light.position.set(animated_objects[LOOK_AT].position.x,light.position.y,animated_objects[LOOK_AT].position.z);
 				light.target.position.set(animated_objects[LOOK_AT].position.x,0,animated_objects[LOOK_AT].position.z);
 
-			} else if (animated_objects.length == 0 && not_switched) {
-				// Update the camera position to follow the object from whatever it's current position is.
-				// Moves by the delta between the object's current position and it's previous position
-				cameraControls.object.position = new THREE.Vector3(
-					cameraControls.object.position.x - prev_pos[0],
-					cameraControls.object.position.y,
-					cameraControls.object.position.z - prev_pos[2]
-				);
+			} 
 
-				camera_position = new THREE.Vector3(
-					cameraControls.object.position.x,
-					cameraControls.object.position.y,
-					cameraControls.object.position.z
-				);
-				not_switched = false;
-			}
+			// Keep track of the camera position whether or not we are following.
+			camera_position = new THREE.Vector3(
+				cameraControls.object.position.x - animated_objects[LOOK_AT].position.x,
+				cameraControls.object.position.y,
+				cameraControls.object.position.z - animated_objects[LOOK_AT].position.z
+			);
+			oldTime = newTime;
 		}
 	}
 
@@ -457,13 +515,14 @@ function read_file() {
 	})(files_list[cur_file]);
 
 	reader.readAsText(files_list[cur_file]);
-
 }
 
 function launch_file(data) {
 
 	positions = [];
 	quaternions = [];
+	colors = [];
+	variable_colors = false;
 	animated_objects = [];
 	static_objects = [];
 	prev_pos = [0,0,0];
@@ -471,7 +530,6 @@ function launch_file(data) {
 	newTime = 0;
 	current_timestep = 0;
 	sim_time = 0;
-	not_switched = true;
 
 	//Split data into setup data and animation data.
 	//Parse the user data.
@@ -490,22 +548,27 @@ function launch_file(data) {
 		setup_data = parse_input_file(lines);
 	} else if (lines[0] == "Version 0.3") {
 		// Set flag to rotate incoming data by 90 degrees on the x-axis (swap y and z)
-		rotate_world = true;
+		rotate_world = false;
 		
-		setup_data = parse_input_file(lines);
+		create_object_ptr = ObjectCreator.v_0_2_create_object;
+
+		// Set the flag for variable colors.
+		variable_colors = true;
+
+		setup_data = v_0_3_parse_file(lines);
+	} else if (lines[0] == "Version 0.4") {
+		// Set flag to rotate incoming data by 90 degrees on the x-axis (swap y and z)
+		rotate_world = false;
+		
+		create_object_ptr = ObjectCreator.v_0_2_create_object;
+
+		// Set the flag for variable colors.
+		variable_colors = true;
+
+		setup_data = v_0_4_parse_file(lines);
 	} else {
 		alert("Unknown Version Number!")
 		return;
-	}
-
-	// Reset the camera position.
-	if (first_round) {
-		if (rotate_world) {
-			camera.position.set( 0, 4.8*scale_factor, 12*scale_factor );
-		} else {
-			camera.position.set( 12*scale_factor, 12*scale_factor, 2*scale_factor );
-		}
-		first_round = false;
 	}
 
 	// Call this per each read-in.
@@ -591,14 +654,15 @@ function floatify( parsed ) {
 
 //Convert a given color string into hex.
 function color_lookup( color_str ) {
-	if (color_str == "Green") {
-		return 0x004000;
-	} else if (color_str == "Gray") {
-		return 0x383838;
-	} else if (color_str == "Red") {
-		return 0x9E0000;
-	} else {
-		return 0xF4C154;
-	}
+	// if (color_str == "Green") {
+	// 	return 0x004000;
+	// } else if (color_str == "Gray") {
+	// 	return 0x383838;
+	// } else if (color_str == "Red") {
+	// 	return 0x9E0000;
+	// } else {
+	// 	return 0xF4C154;
+	// }
+	return color_str
 }
 

@@ -24,6 +24,7 @@
 		<script src="lib/dat.gui.min.js"></script>
 		<script src="lib/tween.min.js"></script>
 		<script type="text/javascript" src="lib/jscolor/jscolor.js"></script>
+		<script src="visualizer/input_parser.js" ></script>
 		<script src="visualizer/object_creator.js" ></script>
 		<script src="visualizer/skeleton.js" ></script>
 		<link rel="stylesheet" type="text/css" href="visualizer.css">
@@ -68,6 +69,16 @@
 				document.getElementById('container').addEventListener("dragleave", FileDragHover, false);
 				document.getElementById('container').addEventListener("drop", handleFileSelect, false);
 				document.getElementById('container').style.display = "block";
+
+				// radio button for camera follow
+				document.getElementById('cam_follow_radio').addEventListener('change', radioChange, false);
+
+				// playback slider speed
+				document.getElementById('playback_slider_control').addEventListener('input', handlePlaybackSpeedChange, false);
+
+				// time slider change
+				document.getElementById('time_slider_control').addEventListener('input', handleVideoSliderInput, false);
+				document.getElementById('time_slider_control').addEventListener('change', handleVideoSliderChange, false);
 		    }
 
 		    // Change the color of the color picker when the event is triggered.
@@ -124,6 +135,44 @@
 				}
 			}
 
+			// Handle the activity of the slider being actively moved by a user.
+			function handleVideoSliderInput(evt) {
+				playbackController.paused = true;
+				slider_position = parseFloat(document.getElementById('time_slider_control').value);
+				console.log(slider_position*eval_time);
+
+				sim_time = slider_position*eval_time;
+
+				var play = document.getElementById("play_button");
+				play.style.display = 'inline';
+				var pause = document.getElementById("pause_button");
+				pause.style.display = 'none';
+			}
+
+			// Handle when a user lets go of manipulating the video slider.
+			function handleVideoSliderChange(evt) {
+				playbackController.paused = false;
+				slider_position = parseFloat(document.getElementById('time_slider_control').value);
+				console.log(slider_position*eval_time);
+
+				sim_time = slider_position*eval_time;
+
+				// Reset time variables to avoid jumping in the simulation.
+				oldTime = clock.getDelta();
+				newTime = clock.getDelta();
+
+				var play = document.getElementById("play_button");
+				play.style.display = 'none';
+				var pause = document.getElementById("pause_button");
+				pause.style.display = 'inline';
+			}
+
+			function handlePlaybackSpeedChange(evt) {
+				play_speed = parseFloat(document.getElementById('playback_slider_control').value); 
+				playbackController.speed = play_speed;
+				document.getElementById('playback_speed_text').textContent = "x"+play_speed.toFixed(1);
+			}
+
 			function handleDemoClick(evt) {
 				file = "demo.dat";
 				if (evt.target.id == "hopper_demo") {
@@ -139,7 +188,7 @@
 				    xhr = new ActiveXObject("Microsoft.XMLHTTP");
 				}
 
-				xhr.open("GET","http://"+window.location.host+"/web_gl_renderer/"+file); //assuming kgr.bss is plaintext
+				xhr.open("GET","http://"+window.location.host+"/WebGL_Visualizer/"+file); //assuming kgr.bss is plaintext
 				xhr.responseType = 'blob';
 				xhr.onload = function(e) {
 					if (this.status == 200) {
@@ -166,6 +215,17 @@
 				e.preventDefault();
 				e.stopPropagation();
 				return false;
+			}
+
+			// radio button change for camera follow
+			function radioChange(evt) {
+				var radios = document.getElementsByName("cam_follow");
+				for (var i = 0; i < radios.length; ++i) {
+            		if (radios[i].checked) {
+                		toggleFollow(radios[i].value);
+                		break;
+            		}
+        		}
 			}
 		</script>
 	</head>
@@ -205,6 +265,9 @@
 			<div id="container"></div>
 		</div>
 		<div id="interaction_pane" class="playback_screen_elem">
+			<div id="playback_slider_div">
+				<input type="range" id="time_slider_control" min=0.0 max=1.0 value=0.0 step=0.0001></input>
+			</div>
 			<div id="open_files">
 				<img id="files" src="resources/file.png" />
 				<img id="demo" src="resources/demo.png" />
@@ -228,12 +291,24 @@
 					<div class="menu_text">Play Speed:</div>
 					<span id="playback_speed_text"></span>
 				</div>
+				<div id="playback_slider">
+					<input type="range" id="playback_slider_control" min=0.0 max=4.0 value=1.0 step=0.1></input>
+				</div>
 			</div>
-			<div id="color_picker_div">
-				<div class="color_picker_text">Object:</div>
-				<select id="color_object_selector"></select>
-				<input class="color" id="object_color"></input>
-			</div>
+			<div id="second_row_controls">
+				<div id="cam_controls_div"> 
+						<div id="cam_follow_text">Camera Follow: </div>
+						<div id="cam_follow_radio">
+							<input type="radio" name="cam_follow" value="yes" checked="checked">Yes<br>
+							<input type="radio" name="cam_follow" value="no">No
+						</div>
+				</div>
+				<div id="color_picker_div">
+					<div class="color_picker_text">Object:</div>
+					<select id="color_object_selector"></select>
+					<input class="color" id="object_color"></input>
+				</div>
+			</div>	
 			<div id="sim_time_div"> <span id="sim_time"></span></div>
 			<div id="file_number_div"> <span id="file_number"></span></div>
 		</div>

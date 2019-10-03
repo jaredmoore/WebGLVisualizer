@@ -43,6 +43,26 @@ body
 	background: gray;
 }
 
+#container.hover
+{
+	color: #f00;
+	border-color: #f00;
+	border-style: solid;
+	box-shadow: inset 0 3px 4px #888;
+}
+
+#playback_slider_div
+{
+	visibility:hidden;
+}
+
+#time_slider_control
+{
+	width:100%;
+	top:-8px;
+	position:absolute;
+}
+
 #sim_time_div
 {
 	visibility: hidden;
@@ -75,7 +95,7 @@ body
 	position: absolute;
 	margin-right: 200px;
 	height:40px;
-	width:100px;
+	width:125px;
 	top:10px;
 	right:10px;
 	z-index: 1;
@@ -87,8 +107,18 @@ body
 #left_playback
 {
 	float:left;
-	font-size: 18px;
 	padding-right: 5px;
+}
+
+#right_playback
+{
+	float:right;
+}
+
+#playback_slider_control
+{
+	clear:both;
+	float:right;
 }
 
 #speed_up_div
@@ -106,6 +136,7 @@ button.playback
 	border: none;
 	background: none;
 	color:white;
+	font-size: 20px;
 }
 
 .menu_text
@@ -169,7 +200,32 @@ button.playback
 
 #color_object_selector
 {
-	width:40px;
+	width:50px;
+}
+
+#cam_controls_div
+{
+	visibility: hidden;
+	width: 175px;
+	color: white;
+	position: absolute;
+	left: 22px;
+}
+
+#cam_follow_text
+{
+	position: relative;
+	float: left;
+}
+
+#cam_follow_radio
+{
+	position: relative;
+	float:right;
+}
+
+input[type="radio"] {
+  margin-right: 5px;
 }
 
 #open_files
