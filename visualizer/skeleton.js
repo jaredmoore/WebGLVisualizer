@@ -450,7 +450,7 @@ function render() {
 				cameraControls.object.position = new THREE.Vector3(
 					cameraControls.object.position.x - (prev_pos[0] - animated_objects[LOOK_AT].position.x),
 					cameraControls.object.position.y,
-					cameraControls.object.position.z)// - (prev_pos[2] - animated_objects[LOOK_AT].position.z)
+					cameraControls.object.position.z// - (prev_pos[2] - animated_objects[LOOK_AT].position.z)
 				);
 
 				// Update the target of the camera (Where it is looking at.)
