@@ -49,19 +49,8 @@
 		                elem.addEventListener('click', playCallback, false);
 		            }
 		        }
-
-		        // Add change listener to the object_id element in color picking.
-		        document.getElementById('color_object_selector').addEventListener('change', handleObjectChange, false);
-
-		        // Add color picker listener to color picker element.
-		        document.getElementById('object_color').addEventListener('change', handleColorChange, false);
-
 		        // Add loading a file to the element.
 		        document.getElementById('files').addEventListener('click', handleOpenClick, false);
-		        document.getElementById('hopper_demo').addEventListener('click', handleDemoClick, false);
-		        document.getElementById('quadruped_demo').addEventListener('click', handleDemoClick, false);
-		        document.getElementById('hexapod_demo').addEventListener('click', handleDemoClick, false);
-		        document.getElementById('demo').addEventListener('click', handleDemoClick, false);
 		        document.getElementById('files2').addEventListener('change', handleFileSelect, false);
 
         		// file drop
@@ -79,33 +68,7 @@
 				// time slider change
 				document.getElementById('time_slider_control').addEventListener('input', handleVideoSliderInput, false);
 				document.getElementById('time_slider_control').addEventListener('change', handleVideoSliderChange, false);
-		    }
-
-		    // Change the color of the color picker when the event is triggered.
-		    function handleObjectChange(evt) {
-		    	if (document.getElementById('color_object_selector').value == "All") {
-		    		document.getElementById('object_color').color.fromString(animated_objects[0].children[0].material.materials[0].color.getHex().toString(16));
-		    	} else {
-			    	if (animated_objects[document.getElementById('color_object_selector').value].children[0].material.materials == undefined) {
-			    			document.getElementById('object_color').color.fromString(animated_objects[document.getElementById('color_object_selector').value].children[0].material.color.getHex().toString(16));
-			    	} else {
-				    	document.getElementById('object_color').color.fromString(animated_objects[document.getElementById('color_object_selector').value].children[0].material.materials[0].color.getHex().toString(16));
-				    }
-				}
-		    }
-
-		    function handleColorChange(evt) {
-		    	color = "#"+document.getElementById('object_color').value;
-
-		    	// Check to see if changing all components or just a single one.
-		    	if (document.getElementById('color_object_selector').value == "All") {
-		    		for(var i = 0; i < animated_objects.length; ++i) {
-		    			animated_objects[i].children[0].material.color.set(color);
-		    		}
-		    	} else {
-		    		animated_objects[document.getElementById('color_object_selector').value].children[0].material.color.set(color);
-		    	}
-		    }
+			}
 
 			function playCallback(evt) {
 				if (evt.target.id.match("rwd_button")) {
@@ -173,31 +136,7 @@
 				document.getElementById('playback_speed_text').textContent = "x"+play_speed.toFixed(1);
 			}
 
-			function handleDemoClick(evt) {
-				file = "demo.dat";
-				if (evt.target.id == "hopper_demo") {
-					file = "hopper_demo.dat";
-				} else if (evt.target.id == "hexapod_demo") {
-					file = "hex_demo.dat";
-				}
-				console.log(evt.target.id);
-				var xhr;
-				if (window.XMLHttpRequest) {
-				    xhr = new XMLHttpRequest();
-				} else if (window.ActiveXObject) {
-				    xhr = new ActiveXObject("Microsoft.XMLHTTP");
-				}
-
-				xhr.open("GET","http://"+window.location.host+"/WebGL_Visualizer/"+file); //assuming kgr.bss is plaintext
-				xhr.responseType = 'blob';
-				xhr.onload = function(e) {
-					if (this.status == 200) {
-						var demo_file = this.response;
-						launch([demo_file]);
-						}
-				};
-				xhr.send();
-			}
+		
 
 			function handleOpenClick(evt) {
 				document.getElementById('files2').click();
@@ -230,37 +169,6 @@
 		</script>
 	</head>
 	<body id="body">
-		<div id="intro_text">
-			<h1> Welcome to the WebGL Visualizer </h1>
-
-			<h3> Purpose: </h3>
-
-			Many researchers in evolutionary robotics and artificial life produce videos to communicate concepts and results from their research.  However, videos are often limited to what the author chooses to share through specific angles or edits.  We propose to change the communication medium from a prerecorded video to a playback of the actual evolved results through the visualizer shown in this demo.  Viewers can freely move the camera around the robot, changing perspective while observing the results.  In addition, color and transparency of individual parts and playback speed can be altered to better understand specific aspects of the evolved results.  Results are visualized using WebGL, a browser based implementation of OpenGL, allowing for playback on most modern browsers without the need to install or configure additional software.  Through a common file standard, different physics engines can be used to conduct the research, but still be shared among the broader research community, eliminating one of the hassles currently facing the community.
-
-			<h3> Instructions: </h3>
-			The interface is composed of a playback bar at the bottom of the screen.  Here you will find common buttons such as play, pause, forward and reverse.  The play speed can be adjusted for slow motion or to speed up.  The current time of the playback is displayed on this bar to the left.  Change individual component colors by selecting it from the dropdown and then selecting a color from the color picker to the right.
-
-			Navigation around the demo is done with the mouse.  Clicking and holding the left mouse button allows for pivoting the camera around the main body of the robot.  Zooming is handled with the scroll wheel.  Panning up and down is done by holding down the right mouse button and sliding up or down.  Left/right panning is currently disabled unless the playback is paused as the camera tracks the motion of the main body of the robot.
-
-			<h3> Start Here: </h3>
-
-			A select few demos are available for viewing currently: (Click to select one.) <br/>
-
-			Note to Safari Users: You may need to enable WebGL, see how <a href="https://discussions.apple.com/thread/3300585?start=0" target="_blank">here</a>
-
-			<br/>
-			<br/>
-			<br/>
-
-			<img id="hopper_demo" src="resources/hopper.png" height="200px" style="float:left; margin-left:20px" border="1px"/> 
-
-			<img id="hexapod_demo" src="resources/hexapod.png" height="200px" style="float:right; margin-right:20px" border="1px"/>
-
-			<img id="quadruped_demo" src="resources/quadruped.png" height="200px" style="display:block; margin: 0 auto" border="1px"/>
-
-			<br style="clear:both" />
-
-		</div>
 		<div id="player_container" class="playback_screen_elem">
 			<div id="container"></div>
 		</div>
@@ -302,11 +210,6 @@
 							<input type="radio" name="cam_follow" value="yes" checked="checked">Yes<br>
 							<input type="radio" name="cam_follow" value="no">No
 						</div>
-				</div>
-				<div id="color_picker_div">
-					<div class="color_picker_text">Object:</div>
-					<select id="color_object_selector"></select>
-					<input class="color" id="object_color"></input>
 				</div>
 			</div>	
 			<div id="sim_time_div"> <span id="sim_time"></span></div>

@@ -8,7 +8,7 @@ var tmpQuat = new THREE.Quaternion();
 var camera, scene, renderer;
 var cameraControls, effectController, playbackController, colorController;
 var clock = new THREE.Clock();
-var gridX = true;
+var gridX = false;
 var gridY = false;
 var gridZ = false;
 var axes = false;
@@ -100,7 +100,7 @@ function fillScene(user_data) {
 	light2.shadowCameraNear = 20;
 	light2.shadowCameraFar = 200;
 	light2.shadowBias = -.0001
-	light2.shadowMapWidth = light2.shadowMapHeight = 2048;
+	light2.shadowMapWidth = light2.shadowMapHeight = 4096*2;
 	light2.shadowDarkness = .7;
 
 	scene.add(ambientLight);
@@ -108,13 +108,56 @@ function fillScene(user_data) {
 	scene.add(light2);
 
 	// Ground
+	var ground_lr = 11;
 	ground = new THREE.Mesh(
-		new THREE.PlaneGeometry( 15000, 15000 ),
-		new THREE.MeshLambertMaterial({ color: 0xDDDDDD })
+		new THREE.PlaneGeometry( 100*scale_factor, ground_lr*scale_factor ),
+		new THREE.MeshLambertMaterial({ color: 0xDDDDDD }),
 	);
+	ground.position.set(50*scale_factor, 0, ground_lr/2.0*scale_factor);
+	ground.material.opacity = 0.15;
+	ground.material.transparent = true;
 	ground.receiveShadow = true;
 	ground.rotation.x = -Math.PI / 2;
 	scene.add( ground );
+
+	// Ceiling
+	var ceiling_lr = ground_lr;
+	ceiling = new THREE.Mesh(
+		new THREE.PlaneGeometry( 100*scale_factor, ceiling_lr*scale_factor ),
+		new THREE.MeshLambertMaterial({ color: 0xDDDDDD }),
+	);
+	ceiling.position.set(50*scale_factor, ceiling_lr*scale_factor, ground_lr/2.0*scale_factor);
+	ceiling.material.opacity = 0.15;
+	ceiling.material.transparent = true;
+	ceiling.receiveShadow = true;
+	ceiling.rotation.x = Math.PI / 2;
+	scene.add( ceiling );
+
+	// Back Wall
+	var backwall_lr = 0;
+	var backwall = new THREE.Mesh(
+		new THREE.PlaneGeometry( 100*scale_factor, ground_lr*scale_factor ),
+		new THREE.MeshLambertMaterial({ color: 0xDDDDDD }),
+	);
+	backwall.position.set(50*scale_factor, ground_lr/2.0*scale_factor, 0);
+	backwall.material.opacity = 0.15;
+	backwall.material.transparent = true;
+	backwall.receiveShadow = true;
+	//ground.rotation.x = -Math.PI / 2;
+	scene.add( backwall );	
+
+	// Front Wall
+	var frontwall_lr = ground_lr;
+	var frontwall = new THREE.Mesh(
+		new THREE.PlaneGeometry( 100*scale_factor, ground_lr*scale_factor ),
+		new THREE.MeshLambertMaterial({ color: 0xDDDDDD }),
+	);
+	frontwall.position.set(50*scale_factor, ground_lr/2.0*scale_factor, ground_lr*scale_factor);
+	frontwall.material.opacity = 0.15;
+	frontwall.material.transparent = true;
+	frontwall.receiveShadow = true;
+	frontwall.rotation.x = -Math.PI;
+	scene.add( frontwall );	
 
 	update_environment();
 
@@ -124,10 +167,10 @@ function fillScene(user_data) {
 	for ( var i = 0; i < user_data.length; ++i ) {
 		obj = create_object_ptr(user_data[i],color_queue,scale_factor);
 
-		// if (color_queue.length > 0 && obj[1].type != "sphere" && obj[1].type != "scene_sphere") {
-		// 	console.log("#"+parseInt(color_queue[i]).toString(16));
-		// 	obj[1].children[0].material.color.set("#"+parseInt(color_queue[i]).toString(16));
-		// }
+		if (color_queue.length > 0 && obj[1].type != "sphere" && obj[1].type != "scene_sphere") {
+			console.log("#"+parseInt(color_queue[i].replace(/^0x/, ''), 16).toString(16));
+			obj[1].children[0].material.color.setHex(parseInt(color_queue[i].replace(/^0x/, ''), 16));
+		}
 
 		if (obj[1].type == "cube" && obj[0] == "static") {
 			obj[1].children[0].material.color.set(0x000FFF);
@@ -144,25 +187,6 @@ function fillScene(user_data) {
 		} else {
 			scene.add(obj[1]);
 		}
-	}
-
-	//Add the robot objects to the color selector drop_down.
-	var sel = document.getElementById("color_object_selector");
-	
-	// Add a default "All" option
-	var option = document.createElement("option");
-	option.value = "All";
-	option.text = "All";
-	option.innerHTML = "All";
-	sel.appendChild(option);
-
-	// Add each object individually.
-	for (var i = 0; i < animated_objects.length; ++i) {
-		option = document.createElement("option");
-		option.value = i.toString();
-		option.text = i.toString();
-		option.innerHTML = i.toString();
-		sel.appendChild(option);
 	}
 
 	if (rotate_world) {
@@ -210,9 +234,6 @@ function init(user_data) {
 
 	// Set the playback controls to visible.
 	document.getElementById('playback_controller').style.visibility = 'visible';
-
-	// Set the color picker controls to visible.
-	document.getElementById('color_picker_div').style.visibility = 'visible';
 
 	// Set the camera follow controls to visible.
 	document.getElementById('cam_controls_div').style.visibility = 'visible';
@@ -279,9 +300,9 @@ function reset_camera_position() {
 
 	if (camera_position == 0) {
 		if (rotate_world) {
-			cameraControls.object.position.set( 0, 4.8*scale_factor, 12*scale_factor );
+			cameraControls.object.position.set( 0, 48*scale_factor, 12*scale_factor );
 		} else {
-			cameraControls.object.position.set( 12*scale_factor, 12*scale_factor, 2*scale_factor );
+			cameraControls.object.position.set( 100*scale_factor, 24*scale_factor, 50*scale_factor );
 		}
 	} else {
 		cameraControls.object.position.set(camera_position.x,camera_position.y,camera_position.z);
@@ -290,7 +311,7 @@ function reset_camera_position() {
 	if (rotate_world) {
 		cameraControls.target.set(0,0,1*scale_factor);
 	} else {
-		cameraControls.target.set(0,1*scale_factor,0);
+		cameraControls.target.set(0,5*scale_factor,0);
 	}
 }
 
@@ -585,17 +606,6 @@ function launch_file(data) {
 	for(i=0; i < animated_objects.length; ++i) {
 		colorController.objects.push(i);
 		colorController.colors.push(color_queue[i]);
-	}
-
-	// Set the color of the color picker.
-	if (document.getElementById('color_object_selector').value != "All") {
-		if (animated_objects[document.getElementById('color_object_selector').value].children[0].material.materials == undefined) {
-				document.getElementById('object_color').color.fromString(animated_objects[document.getElementById('color_object_selector').value].children[0].material.color.getHex().toString(16));
-		} else {
-	    	document.getElementById('object_color').color.fromString(animated_objects[document.getElementById('color_object_selector').value].children[0].material.materials[0].color.getHex().toString(16));
-	    }
-	} else {
-		document.getElementById('object_color').color.fromString(animated_objects[0].children[0].material.color.getHex().toString(16));
 	}
 
 	// Reset time variables to avoid jumping in the simulation.
